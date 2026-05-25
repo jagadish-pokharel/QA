@@ -1,0 +1,39 @@
+name: CI/CD Pipeline for QA Streamlit App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Check out the repository code
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    # 2. Set up Docker Buildx for optimization and caching
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    # 3. Log into Docker Hub securely using GitHub secrets
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    # 4. Build the Docker Image and Push it to Docker Hub
+    - name: Build and Push Docker Image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: |
+          ${{ secrets.DOCKERHUB_USERNAME }}/bert-qa-streamlit:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/bert-qa-streamlit:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
